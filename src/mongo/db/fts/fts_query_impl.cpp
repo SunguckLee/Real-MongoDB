@@ -153,10 +153,21 @@ std::unique_ptr<FTSQuery> FTSQueryImpl::clone() const {
     return std::move(clonedQuery);
 }
 
+/**
+ * For NGram, all term search and phrase search syntax are processed as phrase-search.
+ * So, if(NGRAM), add all term to phrase list
+ *
+ *   if(NGRAM), token will be added to phrase list (not term list)
+ *   else, token will be added to term list
+ */
 void FTSQueryImpl::_addTerms(FTSTokenizer* tokenizer, const string& sentence, bool negated) {
     tokenizer->reset(sentence.c_str(), FTSTokenizer::kFilterStopWords);
 
     auto& activeTerms = negated ? _negatedTerms : _positiveTerms;
+
+    // If NGRAM, then add term to phrase list (not term list)
+    auto& activePhrases = negated ? _negatedPhrases : _positivePhrases;
+
 
     // First, get all the terms for indexing, ie, lower cased words
     // If we are case-insensitive, we can also used this for positive, and negative terms
@@ -171,9 +182,21 @@ void FTSQueryImpl::_addTerms(FTSTokenizer* tokenizer, const string& sentence, bo
         // Compute the string corresponding to 'token' that will be used for the matcher.
         // For case and diacritic insensitive queries, this is the same string as 'boundsTerm'
         // computed above.
-        if (!getCaseSensitive() && !getDiacriticSensitive()) {
+        if (!getCaseSensitive() && !getDiacriticSensitive() && (getLanguage() != "ngram")) {
             activeTerms.insert(word);
         }
+    }
+
+    if(getLanguage() == "ngram"){
+        // Do not ngram based tokenize even if current tokenizer is NGram mode
+        tokenizer->reset(sentence.c_str(), FTSTokenizer::kFilterStopWords | FTSTokenizer::kGenerateDelimiterTokensForNGramSearch);
+        while (tokenizer->moveNext()) {
+            string word = tokenizer->get().toString();
+            activePhrases.push_back(word);
+        }
+
+        // For NGRAM, not support case sensitive and no diacritic sensitive
+        return;
     }
 
     if (!getCaseSensitive() && !getDiacriticSensitive()) {

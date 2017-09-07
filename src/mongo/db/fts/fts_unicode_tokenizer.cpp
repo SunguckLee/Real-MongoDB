@@ -39,6 +39,13 @@
 #include "mongo/util/mongoutils/str.h"
 #include "mongo/util/stringutils.h"
 
+/**
+ * NGram token size is always 2
+ *   If ngram_token_size is greater than 3, mongodb ngram can't search 2-character term.
+ *   So, ngram_token_size=2 is best choice for general purpose.
+ */
+#define NGRAM_TOKEN_SIZE 2
+
 namespace mongo {
 namespace fts {
 
@@ -52,7 +59,9 @@ UnicodeFTSTokenizer::UnicodeFTSTokenizer(const FTSLanguage* language)
                              ? unicode::DelimiterListLanguage::kEnglish
                              : unicode::DelimiterListLanguage::kNotEnglish),
       _caseFoldMode(_language->str() == "turkish" ? unicode::CaseFoldMode::kTurkish
-                                                  : unicode::CaseFoldMode::kNormal) {}
+                                                  : unicode::CaseFoldMode::kNormal),
+      _nGramTokenizer(_language->str() == "ngram"){}
+
 
 void UnicodeFTSTokenizer::reset(StringData document, Options options) {
     _options = options;
@@ -64,6 +73,63 @@ void UnicodeFTSTokenizer::reset(StringData document, Options options) {
 }
 
 bool UnicodeFTSTokenizer::moveNext() {
+    // Generate delimiter token even if _nGramTokenizer==TRUE
+    return (_nGramTokenizer && !(_options & kGenerateDelimiterTokensForNGramSearch)) ?
+    		moveNextForNGram() : moveNextForDelimiter();
+}
+
+bool UnicodeFTSTokenizer::moveNextForNGram() {
+    while (true) {
+        if (_pos >= _document.size()) {
+            _word = "";
+            return false;
+        }
+
+        // Traverse through non-delimiters and build the next token.
+        size_t start = _pos;
+        while (_pos < _document.size()) {
+            if(unicode::codepointIsDelimiter(_document[_pos], _delimListLanguage)){
+                // Not sufficient characters for NGRAM_TOKEN_SIZE, Ignore this and move DELIMITER-TOKEN
+                _skipDelimiters();
+                start = _pos;
+                continue;
+            }
+
+            _pos++;
+            if(_pos - start >= NGRAM_TOKEN_SIZE){
+                break;
+            }
+        }
+
+        if (_pos >= _document.size()) {
+            _word = "";
+            return false;
+        }
+
+        // set next n-gram token start point
+        _pos = start + 1;
+
+        // Skip the delimiters before the next token.
+        _skipDelimiters();
+
+        // Stop words are case-sensitive and diacritic sensitive, so we need them to be lower cased
+        // but with diacritics not removed to check against the stop word list.
+        _word = _document.toLowerToBuf(&_wordBuf, _caseFoldMode, start, NGRAM_TOKEN_SIZE);
+
+        if (!(_options & kGenerateDiacriticSensitiveTokens)) {
+            // Can't use _wordbuf for output here because our input _word may point into it.
+            _word = unicode::String::caseFoldAndStripDiacritics(
+                &_finalBuf, _word, unicode::String::kCaseSensitive, _caseFoldMode);
+        }
+
+        return true;
+    }
+}
+
+/**
+ * This is original tokenizer for DELIMITER-based
+ */
+bool UnicodeFTSTokenizer::moveNextForDelimiter() {
     while (true) {
         if (_pos >= _document.size()) {
             _word = "";

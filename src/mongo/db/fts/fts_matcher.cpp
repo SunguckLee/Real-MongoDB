@@ -45,20 +45,25 @@ FTSMatcher::FTSMatcher(const FTSQueryImpl& query, const FTSSpec& spec)
     : _query(query), _spec(spec) {}
 
 bool FTSMatcher::matches(const BSONObj& obj) const {
-    if (canSkipPositiveTermCheck()) {
-        // We can assume that 'obj' has at least one positive term, and dassert as a sanity
-        // check.
-        dassert(hasPositiveTerm(obj));
-    } else {
-        if (!hasPositiveTerm(obj)) {
+    // Only doing term check if language is not a NGRAM
+    if(_query.getLanguage()!="ngram"){
+        if (canSkipPositiveTermCheck()) {
+            // We can assume that 'obj' has at least one positive term, and dassert as a sanity
+            // check.
+            dassert(hasPositiveTerm(obj));
+        } else {
+            if (!hasPositiveTerm(obj)) {
+                return false;
+            }
+        }
+
+        if (hasNegativeTerm(obj)) {
             return false;
         }
     }
 
-    if (hasNegativeTerm(obj)) {
-        return false;
-    }
-
+    // If language=="ngram", then doing all check as phrase search.
+    // So, "{$text:{$search:'abc def'}}" is not OR-ed search in ngram search, processed as AND-ed search (In original mongodb, it's processed as OR-ed operation).
     if (!positivePhrasesMatch(obj)) {
         return false;
     }
@@ -173,6 +178,10 @@ FTSTokenizer::Options FTSMatcher::_getTokenizerOptions() const {
     }
     if (_query.getDiacriticSensitive()) {
         tokenizerOptions |= FTSTokenizer::kGenerateDiacriticSensitiveTokens;
+    }
+
+    if (_query.getLanguage()=="ngram"){
+        tokenizerOptions |= FTSTokenizer::kGenerateDelimiterTokensForNGramSearch;
     }
 
     return tokenizerOptions;

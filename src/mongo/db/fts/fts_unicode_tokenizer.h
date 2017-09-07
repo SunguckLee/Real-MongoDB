@@ -63,6 +63,8 @@ public:
     void reset(StringData document, Options options) override;
 
     bool moveNext() override;
+    bool moveNextForNGram();      // for NGram
+    bool moveNextForDelimiter();  // for Delimtier (MongoDB Original)
 
     StringData get() const override;
 
@@ -78,6 +80,8 @@ private:
     const StopWords* const _stopWords;
     const unicode::DelimiterListLanguage _delimListLanguage;
     const unicode::CaseFoldMode _caseFoldMode;
+
+    const bool _nGramTokenizer;
 
     unicode::String _document;
     size_t _pos;

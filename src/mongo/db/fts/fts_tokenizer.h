@@ -76,6 +76,11 @@ public:
     static const Options kGenerateDiacriticSensitiveTokens = 1 << 2;
 
     /**
+     * Generate delimiter based token for NGram search
+     */
+    static const Options kGenerateDelimiterTokensForNGramSearch = 1 << 3;
+
+    /**
      * Process a new document, and discards any previous results.
      * May be called multiple times on an instance of an iterator.
      */
