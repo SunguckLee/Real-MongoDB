@@ -43,6 +43,8 @@
  * NGram token size is always 2
  *   If ngram_token_size is greater than 3, mongodb ngram can't search 2-character term.
  *   So, ngram_token_size=2 is best choice for general purpose.
+ *
+ * Token size must be greater than or equal 2
  */
 #define NGRAM_TOKEN_SIZE 2
 
@@ -95,10 +97,10 @@ bool UnicodeFTSTokenizer::moveNextForNGram() {
                 continue;
             }
 
-            _pos++;
-            if(_pos - start >= NGRAM_TOKEN_SIZE){
+            if(_pos - start >= NGRAM_TOKEN_SIZE-1){
                 break;
             }
+            _pos++;
         }
 
         if (_pos >= _document.size()) {
