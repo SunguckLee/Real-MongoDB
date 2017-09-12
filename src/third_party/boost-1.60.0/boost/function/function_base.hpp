@@ -121,7 +121,7 @@ namespace boost {
         } obj_ref;
 
         // To relax aliasing constraints
-        mutable char data;
+        mutable char data[sizeof(bound_memfunc_ptr_t)];  // Fix compile error on CentOS 7.x
       };
 
       /**
