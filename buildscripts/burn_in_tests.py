@@ -60,7 +60,7 @@ def parse_command_line():
     # The executor_file and suite_files defaults are required to make the
     # suite resolver work correctly.
     parser.set_defaults(base_commit=None,
-                        branch="master",
+                        branch="main",
                         buildvariant=None,
                         check_evergreen=False,
                         evergreen_file="etc/evergreen.yml",

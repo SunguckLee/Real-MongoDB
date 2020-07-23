@@ -366,7 +366,7 @@ class CheckReplDBHash(JsCustomBehavior):
     match on the primary and secondaries.
     """
     def __init__(self, logger, fixture, shell_options=None):
-        description = "Check dbhashes of all replica set or master/slave members"
+        description = "Check dbhashes of all replica set or main/subordinate members"
         js_filename = os.path.join("jstests", "hooks", "run_check_repl_dbhash.js")
         JsCustomBehavior.__init__(self,
                                   logger,

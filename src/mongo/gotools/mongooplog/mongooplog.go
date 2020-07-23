@@ -70,7 +70,7 @@ func (mo *MongoOplog) Run() error {
 
 	log.Logvf(log.DebugLow, "successfully connected to source server `%v`", mo.SourceOptions.From)
 
-	// set slave ok
+	// set subordinate ok
 	fromSession.SetMode(mgo.Eventual, true)
 
 	// get the tailing cursor for the source server's oplog
