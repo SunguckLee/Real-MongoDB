@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from .interface import Fixture, ReplFixture
 from .standalone import MongoDFixture
 from .replicaset import ReplicaSetFixture
-from .masterslave import MasterSlaveFixture
+from .mainsubordinate import MainSubordinateFixture
 from .shardedcluster import ShardedClusterFixture
 
 
@@ -17,7 +17,7 @@ _FIXTURES = {
     "Fixture": Fixture,
     "MongoDFixture": MongoDFixture,
     "ReplicaSetFixture": ReplicaSetFixture,
-    "MasterSlaveFixture": MasterSlaveFixture,
+    "MainSubordinateFixture": MainSubordinateFixture,
     "ShardedClusterFixture": ShardedClusterFixture,
 }
 

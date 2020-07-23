@@ -68,10 +68,10 @@ def get_config():
     config = {}
     execfile(_BUILDLOGGER_CONFIG, tmp_globals, config)
 
-    # Rename "slavename" to "username" if present.
-    if "slavename" in config and "username" not in config:
-        config["username"] = config["slavename"]
-        del config["slavename"]
+    # Rename "subordinatename" to "username" if present.
+    if "subordinatename" in config and "username" not in config:
+        config["username"] = config["subordinatename"]
+        del config["subordinatename"]
     # Rename "passwd" to "password" if present.
     if "passwd" in config and "password" not in config:
         config["password"] = config["passwd"]
